@@ -38,6 +38,16 @@ func main() {
 		},
 		Year: "1999",
 	})
+	movies = append(movies, Movie{
+		ID: "2",
+		Isbn: "124486789",
+		Title: "Now You See Me",
+		Director: &Director{
+			Firstname: "Louis",
+			Lastname: "Leterrier",
+		},
+		Year: "2013",
+	})
 
 	r.HandleFunc("/movies", getMovies).Methods("GET")
 	r.HandleFunc("/movies/{id}", getMovie).Methods("GET")
