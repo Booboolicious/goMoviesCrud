@@ -2,7 +2,7 @@ package main
 
 import (
 	."github.com/Booboolicious/my"
-	"log"
+	// "log"
 	"encoding/json"
 	"math/rand"
 	"net/http"
