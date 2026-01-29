@@ -1,54 +1,64 @@
 package main
 
 import (
-	. "github.com/Booboolicious/my"
-	// "log"
 	"encoding/json"
 	"math/rand"
 	"net/http"
 	"strconv"
 
+	. "github.com/Booboolicious/my"
+
 	"github.com/gorilla/mux"
-) 
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+)
 
 type Movie struct {
-	ID string `json:"id"`
-	Isbn string `json:"isbn"`
-	Title string `json:"title"`
-	Director *Director `json:"director"`
-	Year string `json:"year"`
+	ID        string    `json:"id" gorm:"primaryKey"`
+	Isbn      string    `json:"isbn"`
+	Title     string    `json:"title"`
+	Director  Director  `json:"director" gorm:"embedded;embeddedPrefix:director_"`
+	Year      string    `json:"year"`
 }
 
 type Director struct {
 	Firstname string `json:"firstname"`
-	Lastname string `json:"lastname"`
+	Lastname  string `json:"lastname"`
 }
 
-var movies []Movie
+var db *gorm.DB
 
 func main() {
-	r := mux.NewRouter()
+	var err error
+	db, err = gorm.Open(sqlite.Open("movies.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
 
-	movies = append(movies, Movie{
-		ID: "1",
-		Isbn: "123456789",
-		Title: "The Matrix",
-		Director: &Director{
-			Firstname: "John",
-			Lastname: "Doe",
-		},
-		Year: "1999",
-	})
-	movies = append(movies, Movie{
-		ID: "2",
-		Isbn: "124486789",
-		Title: "Now You See Me",
-		Director: &Director{
-			Firstname: "Louis",
-			Lastname: "Leterrier",
-		},
-		Year: "2013",
-	})
+	// Migrate the schema
+	db.AutoMigrate(&Movie{})
+
+	// Seed data if empty
+	var count int64
+	db.Model(&Movie{}).Count(&count)
+	if count == 0 {
+		db.Create(&Movie{
+			ID: "1",
+			Isbn: "123456789",
+			Title: "The Matrix",
+			Director: Director{Firstname: "John", Lastname: "Doe"},
+			Year: "1999",
+		})
+		db.Create(&Movie{
+			ID: "2",
+			Isbn: "124486789",
+			Title: "Now You See Me",
+			Director: Director{Firstname: "Louis", Lastname: "Leterrier"},
+			Year: "2013",
+		})
+	}
+
+	r := mux.NewRouter()
 
 	r.HandleFunc("/movies", getMovies).Methods("GET")
 	r.HandleFunc("/movies/{id}", getMovie).Methods("GET")
@@ -56,7 +66,6 @@ func main() {
 	r.HandleFunc("/movies/{id}", updateMovie).Methods("PUT")
 	r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
 
-	// Start server with CORS wrapped around router
 	Log("Server started at port 8000")
 	http.ListenAndServe(":8000", corsMiddleware(r))
 }
@@ -78,18 +87,21 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 func getMovies(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	var movies []Movie
+	db.Find(&movies)
 	json.NewEncoder(w).Encode(movies)
-} 
+}
 
 func getMovie(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	for _, item := range movies {
-		if item.ID == params["id"] {
-			json.NewEncoder(w).Encode(item)
-			return
-		}
+	var movie Movie
+	result := db.First(&movie, "id = ?", params["id"])
+	if result.Error != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
+	json.NewEncoder(w).Encode(movie)
 }
 
 func createMovie(w http.ResponseWriter, r *http.Request) {
@@ -97,34 +109,34 @@ func createMovie(w http.ResponseWriter, r *http.Request) {
 	var movie Movie
 	_ = json.NewDecoder(r.Body).Decode(&movie)
 	movie.ID = strconv.Itoa(rand.Intn(100000000))
-	movies = append(movies, movie)
+	db.Create(&movie)
 	json.NewEncoder(w).Encode(movie)
 }
 
 func updateMovie(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	for index, item := range movies {
-		if item.ID == params["id"] {
-			movies = append(movies[:index], movies[index+1:]...)
-			var movie Movie
-			_ = json.NewDecoder(r.Body).Decode(&movie)
-			movie.ID = params["id"]
-			movies = append(movies, movie)
-			json.NewEncoder(w).Encode(movie)
-			return
-		}
+	var movie Movie
+	result := db.First(&movie, "id = ?", params["id"])
+	if result.Error != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
+
+	var updatedMovie Movie
+	_ = json.NewDecoder(r.Body).Decode(&updatedMovie)
+	updatedMovie.ID = params["id"]
+	db.Save(&updatedMovie)
+	json.NewEncoder(w).Encode(updatedMovie)
 }
 
 func deleteMovie(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	for index, item := range movies {
-		if item.ID == params["id"] {
-			movies = append(movies[:index], movies[index+1:]...)
-			json.NewEncoder(w).Encode(movies)
-			return
-		}
-	}
-} 
+	db.Delete(&Movie{}, "id = ?", params["id"])
+	
+	// Return updated list to match old behavior
+	var movies []Movie
+	db.Find(&movies)
+	json.NewEncoder(w).Encode(movies)
+}
