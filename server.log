@@ -1,1 +1,4 @@
+
+2026/01/29 02:38:48 [32m/home/tdh/Github/Go Project/goMoviesCrud/Library/main.go:39 [33mSLOW SQL >= 200ms
+[0m[31;1m[313.907ms] [33m[rows:0][35m CREATE TABLE `movies` (`id` text,`isbn` text,`title` text,`director_firstname` text,`director_lastname` text,`year` text,PRIMARY KEY (`id`))[0m
 Server started at port 8000
