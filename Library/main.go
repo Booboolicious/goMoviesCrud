@@ -66,6 +66,9 @@ func main() {
 	r.HandleFunc("/movies/{id}", updateMovie).Methods("PUT")
 	r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
 
+	// Serve Static Files for Frontend
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./frontend/")))
+
 	Log("Server started at port 8000")
 	http.ListenAndServe(":8000", corsMiddleware(r))
 }
