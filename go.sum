@@ -1,2 +1,4 @@
 github.com/Booboolicious/my v0.1.0 h1:F0NlCEoNOjc8gzGF9+YP+sTfBDXh4KAKn0pkLaXUjHw=
 github.com/Booboolicious/my v0.1.0/go.mod h1:ZoRKsbrWxwBKlhpppSPzyLhZN2ZFH5qyBv/coFFE2ww=
+github.com/gorilla/mux v1.8.1 h1:TuBL49tXwgrFYWhqrNgrUNEY92u81SPhu7sTdzQEiWY=
+github.com/gorilla/mux v1.8.1/go.mod h1:AKf9I4AEqPTmMytcMc0KkNouC66V3BtZ4qD5fmWSiMQ=
