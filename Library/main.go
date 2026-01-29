@@ -26,5 +26,8 @@ type Director struct {
 var movies []Movie
 
 func main() {
+	r := mux.NewRouter()
+
+	r.
 	Log("Hello World")
 }
