@@ -1,0 +1,18 @@
+# Binary files
+movies-api
+
+# Local database
+movies.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Log files
+*.log
+
+# Git files
+.git
+.gitignore
+
+# Go build cache
+/go-build
