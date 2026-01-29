@@ -56,11 +56,9 @@ func main() {
 	r.HandleFunc("/movies/{id}", updateMovie).Methods("PUT")
 	r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
 
-	// Apply CORS middleware
-	r.Use(corsMiddleware)
-
+	// Start server with CORS wrapped around router
 	Log("Server started at port 8000")
-	http.ListenAndServe(":8000", r)
+	http.ListenAndServe(":8000", corsMiddleware(r))
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
