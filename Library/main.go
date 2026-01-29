@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 
 	. "github.com/Booboolicious/my"
@@ -29,8 +30,19 @@ type Director struct {
 var db *gorm.DB
 
 func main() {
+	// Configuration via Environment Variables
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000"
+	}
+
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		dbPath = "movies.db"
+	}
+
 	var err error
-	db, err = gorm.Open(sqlite.Open("movies.db"), &gorm.Config{})
+	db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
@@ -69,8 +81,8 @@ func main() {
 	// Serve Static Files for Frontend
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./frontend/")))
 
-	Log("Server started at port 8000")
-	http.ListenAndServe(":8000", corsMiddleware(r))
+	Log("Server started at port", port)
+	http.ListenAndServe(":"+port, corsMiddleware(r))
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
