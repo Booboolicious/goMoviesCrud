@@ -1,13 +1,14 @@
 package main
 
 import (
-	."github.com/Booboolicious/my"
+	. "github.com/Booboolicious/my"
 	// "log"
 	"encoding/json"
 	"math/rand"
 	"net/http"
-	"github.com/gorilla/mux"
 	"strconv"
+
+	"github.com/gorilla/mux"
 ) 
 
 type Movie struct {
@@ -54,8 +55,27 @@ func main() {
 	r.HandleFunc("/movies", createMovie).Methods("POST")
 	r.HandleFunc("/movies/{id}", updateMovie).Methods("PUT")
 	r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
+
+	// Apply CORS middleware
+	r.Use(corsMiddleware)
+
 	Log("Server started at port 8000")
 	http.ListenAndServe(":8000", r)
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func getMovies(w http.ResponseWriter, r *http.Request) {
